@@ -3,32 +3,37 @@ import {
   MapPin,
   Phone,
   Send
-  
-} from "lucide-react";
+
+}
+from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
 export const ContactSection = () => {
+  // State and handlers for form submission
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
+    // handle form submission
   e.preventDefault();
   setIsSubmitting(true);
 
   const formData = new FormData(e.target);
-
+    // Send form data to the backend
   try {
+    // make the POST request to the backend contact endpoint
     const res = await fetch("https://myportfolio-0vnd.onrender.com/contact", {
       method: "POST",
       body: formData,
     });
- 
+    
     const data = await res.json();
     console.log("Response:", data);
 
     if (res.ok) {
+      // show success toast
       toast({
         title: "Message sent!",
         description: data.message,
@@ -52,6 +57,7 @@ export const ContactSection = () => {
 };
 
   return (
+    // define the contact section structure
     <section id="contact" className="py-24 px-4 relative bg-secondary/30">
       <div className="container mx-auto max-w-5xl">
         <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center">

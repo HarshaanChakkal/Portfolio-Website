@@ -1,5 +1,6 @@
 import { Briefcase, Code, User } from "lucide-react";
 
+// The AboutSection represents the about me section of the portfolio website.
 export const AboutSection = () => {
   return (
     <section id="about" className="py-24 px-4 relative">
