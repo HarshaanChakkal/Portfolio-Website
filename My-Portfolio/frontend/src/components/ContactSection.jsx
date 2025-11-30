@@ -24,7 +24,7 @@ export const ContactSection = () => {
     // Send form data to the backend
   try {
     // make the POST request to the backend contact endpoint
-    const res = await fetch("https://myportfolio-0vnd.onrender.com/contact", {
+    const res = await fetch("https://portfolio-website-t4go.onrender.com/contact", {
       method: "POST",
       body: formData,
     });
