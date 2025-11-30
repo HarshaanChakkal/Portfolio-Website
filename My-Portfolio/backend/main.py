@@ -13,7 +13,7 @@ app = FastAPI()
 # Configure CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://portfolio-harshaan.vercel.app"],
+    allow_origins=["https://portfolio-website-khaki-iota-54.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
