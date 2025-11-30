@@ -8,6 +8,12 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+# Ensure required environment variables are set
+required_env_vars = ['SMTP_SENDER', 'SMTP_PASSWORD', 'RECEIVER_EMAIL']
+missing_vars = [var for var in required_env_vars if not os.getenv(var)]
+if missing_vars:
+    raise EnvironmentError(f"Missing required environment variables: {', '.join(missing_vars)}")
+
 app = FastAPI()
 
 # Configure CORS middleware
