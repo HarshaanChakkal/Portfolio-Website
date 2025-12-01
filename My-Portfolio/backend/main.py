@@ -1,16 +1,22 @@
-from fastapi import FastAPI, Form
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-import os
-import traceback
-from dotenv import load_dotenv
-from resend import Resend
 
+import os
+import resend
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+# Load .env
 load_dotenv()
 
+# Initialize Resend
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+resend.api_key = RESEND_API_KEY
+
+# FastAPI app
 app = FastAPI()
 
-# Update this list with your frontend URL(s)
+# Update this list with your actual frontend URL(s)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://portfolio-website-khaki-iota-54.vercel.app"],
@@ -19,51 +25,48 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create Resend client
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-if not RESEND_API_KEY:
-    print("WARNING: RESEND_API_KEY not set. Emails will fail until you set it.")
-resend_client = Resend(RESEND_API_KEY) if RESEND_API_KEY else None
+# Create Resend client (reads API key from env)
+class ContactForm(BaseModel):
+    name: str
+    email: str
+    message: str
 
-# Use a verified email (for testing, must match your Resend sandbox email)
-SMTP_SENDER_DISPLAY = os.getenv("SMTP_SENDER")  # e.g., h895c959@ku.edu
+@app.get("/")
+def root():
+    return {"status": "Backend is running"}
 
 @app.post("/contact")
-async def contact(name: str = Form(...), email: str = Form(...), message: str = Form(...)):
-    print("CONTACT REQUEST:", name, email)
-    if resend_client is None:
-        return JSONResponse(content={"error": "Email service not configured"}, status_code=500)
+async def contact(form: ContactForm):
+    print("CONTACT REQUEST:", form.name, form.email)
+    print("RESEND_API_KEY set?:", bool(RESEND_API_KEY))
 
-    subject = f"New message from {name}"
-    html = f"""
-      <p><strong>From:</strong> {name} &lt;{email}&gt;</p>
-      <p><strong>Message:</strong></p>
-      <p>{message.replace('<', '&lt;').replace('>', '&gt;').replace('\n','<br/>')}</p>
-    """
+    if not RESEND_API_KEY:
+        raise HTTPException(status_code=500, detail="Resend API key not configured")
+
+    # Validate sender email domain (.com or .edu)
+    if not (form.email.endswith(".com") or form.email.endswith(".edu")):
+        raise HTTPException(status_code=400, detail="Email domain must be .com or .edu")
 
     try:
-        resp = resend_client.emails.send(
+        # Send email using Resend
+        response = resend.Emails.send(
             {
-                "from": SMTP_SENDER_DISPLAY,
-                "to": [os.getenv("RECEIVER_EMAIL")],  # Your email for testing
-                "subject": subject,
-                "html": html,
-                "reply_to": email
+                "from": "Portfolio Contact <onboarding@resend.dev>",
+                "to": ["harshaanchakkal@gmail.com"],  # your receiving email
+                "subject": f"New Contact Request - {form.name}",
+                "html": f"""
+                    <h2>New Contact Form Submission</h2>
+                    <p><strong>Name:</strong> {form.name}</p>
+                    <p><strong>Email:</strong> {form.email}</p>
+                    <p><strong>Message:</strong></p>
+                    <p>{form.message}</p>
+                """,
             }
         )
-        print("Resend response:", resp)
-        return JSONResponse(content={"message": "Email sent successfully"})
+
+        print("EMAIL SENT:", response)
+        return {"status": "success", "message": "Email sent"}
 
     except Exception as e:
-        # Capture the exact Resend error (like unverified email/domain)
-        error_msg = str(e)
-        print("RESEND ERROR:", error_msg)
-        if "only send testing emails" in error_msg:
-            return JSONResponse(
-                content={
-                    "error": "Cannot send to this recipient in testing mode. "
-                             "Use your verified email or verify a domain at resend.com."
-                },
-                status_code=400
-            )
-        return JSONResponse(content={"error": error_msg}, status_code=500)
+        print("RESEND ERROR:", e)
+        raise HTTPException(status_code=500, detail="Failed to send email")
