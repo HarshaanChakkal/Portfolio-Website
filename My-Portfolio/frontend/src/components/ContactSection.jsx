@@ -11,49 +11,48 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
 export const ContactSection = () => {
-  // State and handlers for form submission
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
-    // handle form submission
-  e.preventDefault();
-  setIsSubmitting(true);
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  const formData = new FormData(e.target);
-    // Send form data to the backend
-  try {
-    // make the POST request to the backend contact endpoint
-    const res = await fetch("https://portfolio-website-t4go.onrender.com/contact", {
-      method: "POST",
-      body: formData,
-    });
-    
-    const data = await res.json();
-    console.log("Response:", data);
+    const formData = new FormData();
+    formData.append("name", e.target.name.value);
+    formData.append("email", e.target.email.value);
+    formData.append("message", e.target.message.value);
 
-    if (res.ok) {
-      // show success toast
-      toast({
-        title: "Message sent!",
-        description: data.message,
+    try {
+      const res = await fetch("https://portfolio-website-t4go.onrender.com/contact", {
+        method: "POST",
+        body: formData,
       });
-      e.target.reset();
-    } else {
+
+      const data = await res.json();
+      console.log("Response:", data);
+
+      if (res.ok) {
+        toast({
+          title: "Message sent!",
+          description: "Your message has been delivered successfully.",
+        });
+        e.target.reset();
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to send message.",
+        });
+      }
+    } catch (error) {
+      console.error("Network error:", error);
       toast({
         title: "Error",
-        description: data.error || "Failed to send message.",
+        description: "Something went wrong. Please try again later.",
       });
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (error) {
-    console.error("Network error:", error);
-    toast({
-      title: "Error",
-      description: "Something went wrong. Please try again later.",
-    });
-  } finally {
-    setIsSubmitting(false);
-  }
 };
 
   return (
