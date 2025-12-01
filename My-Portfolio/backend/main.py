@@ -51,8 +51,8 @@ async def contact(form: ContactForm):
         # Send email using Resend
         response = resend.Emails.send(
             {
-                "from": "Portfolio Contact <onboarding@resend.dev>",
-                "to": ["harshaanchakkal@gmail.com"],  # your receiving email
+                "from": "Portfolio Contact <contact@ku.edu>",
+                "to": ["h895c959@ku.edu"],  # your receiving email
                 "subject": f"New Contact Request - {form.name}",
                 "html": f"""
                     <h2>New Contact Form Submission</h2>
