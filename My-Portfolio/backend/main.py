@@ -1,5 +1,4 @@
-# "https://portfolio-website-khaki-iota-54.vercel.app"
-# backend/main.py
+
 from fastapi import FastAPI, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -22,20 +21,19 @@ app.add_middleware(
 )
 
 # Create Resend client (reads API key from env)
-API_KEY = os.getenv("API_KEY")
-if not API_KEY:
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+if not RESEND_API_KEY:
     print("WARNING: RESEND_API_KEY not set. Email will fail until you set it.")
-resend_client = Resend(API_KEY) if API_KEY else None
+resend_client = Resend(RESEND_API_KEY) if RESEND_API_KEY else None
 
-# Replace these with the 'from' address you want emails to appear from.
-# Resend requires the sending identity. Use a verified address or a resend-provided onboarding one.
-SMTP_SENDER_DISPLAY = "harshaanchakkal@gmail.com"  # change to your verified sender
+SMTP_SENDER_DISPLAY = "Portfolio Contact <onboarding@resend.dev>"
+  # change to your verified sender
 
 @app.post("/contact")
 async def contact(name: str = Form(...), email: str = Form(...), message: str = Form(...)):
     # debug logs (appear in Render logs)
     print("CONTACT REQUEST:", name, email)
-    print("API KEY set?:", bool(os.getenv("API_KEY")))
+    print("RESEND_API_KEY set?:", bool(RESEND_API_KEY))
 
     if resend_client is None:
         return JSONResponse(content={"error": "Email service not configured"}, status_code=500)
