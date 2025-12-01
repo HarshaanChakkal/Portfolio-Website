@@ -1,14 +1,19 @@
 
-from fastapi import FastAPI, Form
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 import os
-import traceback
+import resend
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from resend import Resend
 
+# Load .env
 load_dotenv()
 
+# Initialize Resend
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+resend.api_key = RESEND_API_KEY
+
+# FastAPI app
 app = FastAPI()
 
 # Update this list with your actual frontend URL(s)
@@ -21,44 +26,43 @@ app.add_middleware(
 )
 
 # Create Resend client (reads API key from env)
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-if not RESEND_API_KEY:
-    print("WARNING: RESEND_API_KEY not set. Email will fail until you set it.")
-resend_client = Resend(RESEND_API_KEY) if RESEND_API_KEY else None
+class ContactForm(BaseModel):
+    name: str
+    email: str
+    message: str
 
-SMTP_SENDER_DISPLAY = "Portfolio Contact <onboarding@resend.dev>"
-  # change to your verified sender
+@app.get("/")
+def root():
+    return {"status": "Backend is running"}
 
 @app.post("/contact")
-async def contact(name: str = Form(...), email: str = Form(...), message: str = Form(...)):
-    # debug logs (appear in Render logs)
-    print("CONTACT REQUEST:", name, email)
+async def contact(form: ContactForm):
+    print("CONTACT REQUEST:", form.name, form.email)
     print("RESEND_API_KEY set?:", bool(RESEND_API_KEY))
 
-    if resend_client is None:
-        return JSONResponse(content={"error": "Email service not configured"}, status_code=500)
-
-    subject = f"New message from {name}"
-    html = f"""
-      <p><strong>From:</strong> {name} &lt;{email}&gt;</p>
-      <p><strong>Message:</strong></p>
-      <p>{message.replace('<', '&lt;').replace('>', '&gt;').replace('\n','<br/>')}</p>
-    """
+    if not RESEND_API_KEY:
+        raise HTTPException(status_code=500, detail="Resend API key not configured")
 
     try:
-        resp = resend_client.emails.send(
+        # Send email using Resend
+        response = resend.Emails.send(
             {
-                "from": SMTP_SENDER_DISPLAY,
-                "to": [os.getenv("RECEIVER_EMAIL")],
-                "subject": subject,
-                "html": html,
-                # set reply-to so you can reply directly to the user
-                "reply_to": email
+                "from": "Portfolio Contact <onboarding@resend.dev>",
+                "to": ["harshaanchakkal@gmail.com"],  # your receiving email
+                "subject": f"New Contact Request - {form.name}",
+                "html": f"""
+                    <h2>New Contact Form Submission</h2>
+                    <p><strong>Name:</strong> {form.name}</p>
+                    <p><strong>Email:</strong> {form.email}</p>
+                    <p><strong>Message:</strong></p>
+                    <p>{form.message}</p>
+                """,
             }
         )
-        print("Resend response:", resp)
-        return JSONResponse(content={"message": "Email sent successfully"})
+
+        print("EMAIL SENT:", response)
+        return {"status": "success", "message": "Email sent"}
+
     except Exception as e:
-        print("RESEND ERROR:")
-        traceback.print_exc()
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        print("RESEND ERROR:", e)
+        raise HTTPException(status_code=500, detail="Failed to send email")
