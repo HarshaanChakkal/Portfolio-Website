@@ -20,10 +20,10 @@ app.add_middleware(
 )
 
 # Create Resend client
-API_KEY = os.getenv("API_KEY")
-if not API_KEY:
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+if not RESEND_API_KEY:
     print("WARNING: RESEND_API_KEY not set. Emails will fail until you set it.")
-resend_client = Resend(API_KEY) if API_KEY else None
+resend_client = Resend(RESEND_API_KEY) if RESEND_API_KEY else None
 
 # Use a verified email (for testing, must match your Resend sandbox email)
 SMTP_SENDER_DISPLAY = os.getenv("SMTP_SENDER")  # e.g., h895c959@ku.edu
