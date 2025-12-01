@@ -18,15 +18,21 @@ export const ContactSection = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const formData = new FormData();
-    formData.append("name", e.target.name.value);
-    formData.append("email", e.target.email.value);
-    formData.append("message", e.target.message.value);
+    const formData = new FormData(e.target);
+
+    const payload = {
+      name: formData.get("name"),
+      email: formData.get("email"),
+      message: formData.get("message"),
+    };
 
     try {
       const res = await fetch("https://portfolio-website-t4go.onrender.com/contact", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -35,7 +41,7 @@ export const ContactSection = () => {
       if (res.ok) {
         toast({
           title: "Message sent!",
-          description: "Your message has been delivered successfully.",
+          description: data.message,
         });
         e.target.reset();
       } else {
@@ -53,7 +59,7 @@ export const ContactSection = () => {
     } finally {
       setIsSubmitting(false);
     }
-};
+  };
 
   return (
     // define the contact section structure
